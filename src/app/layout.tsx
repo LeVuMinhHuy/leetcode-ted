@@ -13,8 +13,8 @@ const fontSans = FontSans({
 	variable: '--font-sans',
 });
 
-const TITLE = "Ted's Leetcode board";
-const DESCRIPTION = 'Do Leetcode by elo ranking';
+const TITLE = 'Leetcode crew board';
+const DESCRIPTION = 'Habit heatmaps, streaks, and Elo ranking for the crew';
 
 export const metadata: Metadata = {
 	metadataBase: new URL('https://tedcode.vercel.app'),

@@ -15,11 +15,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 								className='text-gray-500 hover:text-blue-800'
 								href='https://clist.by/coder/ted/'
 							>
-								Ted&apos;s Leetcode Board:{' '}
+								Leetcode crew board
 							</Link>
 						</h1>
 						<h2 className='text-lg text-muted-foreground mb-2'>
-							Do Leetcode with Elo ranking strategy
+							Habit heatmaps, streaks, and Elo — join with a username
 						</h2>
 						{/*
             <h3 className='text-md text-muted-foreground'>

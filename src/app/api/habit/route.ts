@@ -1,66 +1,36 @@
 import { LC_USERNAME } from '@/constants/data-source';
+import {
+	fetchMemberSnapshot,
+	fetchMemberYearContributions,
+} from '@/lib/leetcode/client';
 import { NextResponse } from 'next/server';
 
-interface LeetCodeCalendarResponse {
-	totalSolved: number;
-	totalQuestions: number;
-	submissionCalendar: { [key: string]: number };
-}
-
-export async function GET() {
+export const GET = async (request: Request) => {
 	try {
-		const username = LC_USERNAME;
-		const year = new Date().getFullYear();
-		const url = `https://leetcode-stats-api.herokuapp.com/${username}`;
+		const { searchParams } = new URL(request.url);
+		const username = (searchParams.get('username') || LC_USERNAME).trim().toLowerCase();
+		const yearParam = searchParams.get('year');
+		const year = yearParam ? Number(yearParam) : undefined;
 
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error('Failed to fetch calendar data');
+		if (year && Number.isFinite(year)) {
+			const heatmap = await fetchMemberYearContributions(username, year);
+			return NextResponse.json(heatmap);
 		}
 
-		const data: LeetCodeCalendarResponse = await response.json();
-		const submissionCalendar: { [key: string]: number } = data.submissionCalendar;
-
-		const totalSolved = data.totalSolved;
-		const totalQuestions = data.totalQuestions;
-
-		let streak = 0;
-		let maxStreak = 0;
-		const uniqueDates = new Set<number>();
-		const dates: Date[] = [];
-
-		// Collect unique submission dates
-		Object.entries(submissionCalendar).forEach(([timestamp, problemCount]) => {
-			if (problemCount > 0) {
-				const date = new Date(parseInt(timestamp) * 1000);
-				const dateYear = date.getFullYear();
-
-				if (dateYear === year) {
-					uniqueDates.add(date.setHours(0, 0, 0, 0));
-
-					for (let i = 0; i < problemCount; i++) {
-						dates.push(date);
-					}
-				}
-			}
+		const snapshot = await fetchMemberSnapshot(username);
+		return NextResponse.json({
+			dates: snapshot.contributions.flatMap((day) =>
+				Array.from({ length: day.count }, () => day.date)
+			),
+			year: snapshot.year,
+			streak: snapshot.currentStreak,
+			longestStreak: snapshot.longestStreak,
+			totalSolved: snapshot.totalSolved,
+			totalQuestions: snapshot.totalQuestions,
+			contributions: snapshot.contributions,
 		});
-
-		// Convert to sorted array
-		const sortedDates = Array.from(uniqueDates).sort((a, b) => a - b);
-
-		// Calculate longest streak
-		for (let i = 0; i < sortedDates.length; i++) {
-			if (i > 0 && sortedDates[i] === sortedDates[i - 1] + 86400000) {
-				streak++;
-			} else {
-				streak = 1;
-			}
-			maxStreak = Math.max(maxStreak, streak);
-		}
-
-		return NextResponse.json({ dates, year, streak: maxStreak, totalSolved, totalQuestions });
 	} catch (error) {
 		console.error('Error fetching calendar data:', error);
 		return NextResponse.json({ error: 'Failed to fetch calendar data' }, { status: 500 });
 	}
-}
+};

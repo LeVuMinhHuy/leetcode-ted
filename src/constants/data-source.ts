@@ -4,3 +4,5 @@ export const ZEROTRACK_RATINGS_DATA =
 export const MY_LOCAL_CSV = 'src/data/leetcode.csv';
 
 export const LC_USERNAME = 'tedvu';
+
+export const LC_STATS_API = 'https://leetcode-stats.tashif.codes';

@@ -1,59 +1,60 @@
-import React from 'react';
+'use client';
+
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { DailyContribution } from '@/lib/leetcode/types';
+import { cn } from '@/lib/utils';
 
-export interface HabitBoardProps {
-	dates: Date[];
+export type HabitBoardProps = {
+	contributions: DailyContribution[];
 	year: number;
+	availableYears: number[];
 	streak: number;
+	longestStreak: number;
 	totalSolved: number;
 	totalQuestions: number;
-}
+	displayName: string;
+	onYearChange?: (year: number) => void;
+};
 
-const getProblemCountMap = (dates: Date[]): Map<string, number> => {
+const getProblemCountMap = (contributions: DailyContribution[]): Map<string, number> => {
 	const problemCount = new Map<string, number>();
-	dates.forEach((date) => {
-		const dateStr = `${String(date.getDate()).padStart(2, '0')}-${String(
-			date.getMonth() + 1
-		).padStart(2, '0')}-${date.getFullYear()}`; // DD-MM-YYYY
-		problemCount.set(dateStr, (problemCount.get(dateStr) || 0) + 1);
+	contributions.forEach((day) => {
+		problemCount.set(day.date, day.count);
 	});
 	return problemCount;
 };
 
 const getColorClass = (count: number): string => {
-	if (count === 0) return 'bg-gray-100'; // No problem
-	if (count === 1) return 'bg-orange-100'; // Very light orange
-	if (count === 2) return 'bg-orange-200'; // Light orange
-	if (count === 3) return 'bg-orange-300'; // Soft orange
-	if (count === 4) return 'bg-orange-400'; // Medium orange
-	if (count === 5) return 'bg-orange-500'; // Strong orange
-	if (count === 6) return 'bg-orange-600'; // Darker orange
-	return 'bg-orange-700'; // Deep orange for 7+ problems
+	if (count === 0) return 'bg-muted';
+	if (count === 1) return 'bg-orange-100 dark:bg-orange-950';
+	if (count === 2) return 'bg-orange-200 dark:bg-orange-900';
+	if (count === 3) return 'bg-orange-300 dark:bg-orange-800';
+	if (count === 4) return 'bg-orange-400 dark:bg-orange-700';
+	if (count === 5) return 'bg-orange-500 dark:bg-orange-600';
+	if (count === 6) return 'bg-orange-600';
+	return 'bg-orange-700';
 };
 
-// Format date as DD-MM-YYYY for display
 const formatDateStr = (date: Date): string => {
-	return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(
-		2,
-		'0'
-	)}-${date.getFullYear()}`;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
 };
 
-// Get days in a month and group by weeks, starting Monday
 const getMonthWeeks = (month: number, year: number) => {
 	const daysInMonth = new Date(year, month + 1, 0).getDate();
-	const firstDay = new Date(year, month, 1).getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+	const firstDay = new Date(year, month, 1).getDay();
 	const weeks: (Date | null)[][] = [];
 	let currentWeek: (Date | null)[] = [];
 
-	// Add placeholders for days before the first Monday
-	const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Shift to start on Monday
+	const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 	for (let i = 0; i < startOffset; i++) {
 		currentWeek.push(null);
 	}
 
-	// Fill in the days
 	for (let day = 1; day <= daysInMonth; day++) {
 		const date = new Date(year, month, day);
 		currentWeek.push(date);
@@ -63,7 +64,6 @@ const getMonthWeeks = (month: number, year: number) => {
 		}
 	}
 
-	// Pad the last week with nulls if incomplete
 	if (currentWeek.length > 0) {
 		while (currentWeek.length < 7) {
 			currentWeek.push(null);
@@ -74,51 +74,73 @@ const getMonthWeeks = (month: number, year: number) => {
 	return weeks;
 };
 
-// HabitBoard component
-// HabitBoard component
-const HabitBoard: React.FC<HabitBoardProps> = ({
-	dates,
+const HabitBoard = ({
+	contributions,
 	year,
+	availableYears,
 	streak,
+	longestStreak,
 	totalSolved,
 	totalQuestions,
-}) => {
-	const problemCountMap = getProblemCountMap(dates);
-	const months = Array.from({ length: 12 }, (_, i) => i); // 0 = Jan, 11 = Dec
+	displayName,
+	onYearChange,
+}: HabitBoardProps) => {
+	const problemCountMap = useMemo(() => getProblemCountMap(contributions), [contributions]);
+	const months = Array.from({ length: 12 }, (_, i) => i);
+	const years = availableYears.length ? [...availableYears].sort((a, b) => b - a) : [year];
 
 	return (
-		<Card className='p-2 md:p-4 w-full border-none'>
-			<div className='flex flex-col gap-2 sm:flex-row sm:gap-8 mb-8'>
-				<span className='text-orange-700 font-medium flex items-center'>
-					<div
-						className={`w-2 h-2 rounded-full mr-2 ${
-							streak > 0 ? 'bg-orange-400 animate-pulse' : 'bg-gray-400'
-						}`}
-					/>
-					Streak:{' '}
-					<span
-						className={`font-semibold ml-1 ${streak > 0 ? 'text-orange-700' : 'text-gray-600'}`}
-					>
-						{streak}
+		<Card className='p-2 md:p-4 w-full border-none shadow-none'>
+			<div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6'>
+				<div className='flex flex-col gap-2 sm:flex-row sm:gap-8'>
+					<span className='text-orange-700 dark:text-orange-400 font-medium flex items-center'>
+						<div
+							className={`w-2 h-2 rounded-full mr-2 ${
+								streak > 0 ? 'bg-orange-400 animate-pulse' : 'bg-muted-foreground'
+							}`}
+						/>
+						Streak:{' '}
+						<span className={`font-semibold ml-1 ${streak > 0 ? '' : 'text-muted-foreground'}`}>
+							{streak}
+						</span>
+						<span className='text-muted-foreground font-normal ml-1'>best {longestStreak}</span>
 					</span>
-				</span>
-				<span className='text-green-700 font-medium'>
-					Total solved: <span className='text-green-800 font-semibold'>{totalSolved}</span>{' '}
-					<span className='text-green-700 font-medium'>{`(over ${totalQuestions})`}</span>{' '}
-				</span>
+					<span className='text-green-700 dark:text-green-400 font-medium'>
+						{displayName} solved{' '}
+						<span className='font-semibold'>{totalSolved}</span>{' '}
+						<span className='font-medium'>{`(of ${totalQuestions})`}</span>
+					</span>
+				</div>
+				{onYearChange ? (
+					<div className='flex flex-wrap gap-1'>
+						{years.map((entryYear) => (
+							<button
+								key={entryYear}
+								type='button'
+								onClick={() => onYearChange(entryYear)}
+								className={cn(
+									'text-xs px-2 py-1 rounded-md border transition-colors',
+									entryYear === year
+										? 'border-orange-400 text-orange-700 dark:text-orange-300'
+										: 'border-transparent text-muted-foreground hover:text-foreground'
+								)}
+							>
+								{entryYear}
+							</button>
+						))}
+					</div>
+				) : null}
 			</div>
 
 			<CardContent className='p-0'>
 				<TooltipProvider>
-					{/* Container with grid layout for months */}
 					<div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 gap-6'>
 						{months.map((month) => {
 							const weeks = getMonthWeeks(month, year);
 							return (
 								<div key={month} className='flex flex-col items-center'>
-									{/* Grid: 7 rows (Mon-Sun), columns = weeks */}
 									<div
-										className='grid grid-rows-7 gap-y-1 gap-x-4 xs:gap-y-[6px] xs:gap-x-[6px]' // 8px gap for rows and columns
+										className='grid grid-rows-7 gap-y-1 gap-x-4 xs:gap-y-[6px] xs:gap-x-[6px]'
 										style={{
 											gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
 										}}
@@ -126,7 +148,7 @@ const HabitBoard: React.FC<HabitBoardProps> = ({
 										{Array.from({ length: 7 }, (_, rowIndex) => (
 											<React.Fragment key={rowIndex}>
 												{weeks.map((week, weekIndex) => {
-													const date = week[rowIndex]; // Row 0 = Mon, Row 6 = Sun
+													const date = week[rowIndex];
 													if (!date) {
 														return <div key={weekIndex} className='w-3 h-3' />;
 													}
@@ -153,7 +175,6 @@ const HabitBoard: React.FC<HabitBoardProps> = ({
 											</React.Fragment>
 										))}
 									</div>
-									{/* Month label below the grid */}
 									<div className='text-center text-xs md:text-sm text-muted-foreground mt-2'>
 										{new Date(year, month).toLocaleString('default', {
 											month: 'short',

@@ -6,6 +6,14 @@ const nextConfig = {
 		reactCompiler: true,
 	},
 	reactStrictMode: true,
+	images: {
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: 'assets.leetcode.com',
+			},
+		],
+	},
 	async headers() {
 		return [
 			{

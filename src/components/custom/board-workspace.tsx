@@ -61,7 +61,9 @@ export const BoardWorkspace = ({ members }: BoardWorkspaceProps) => {
 		return (
 			<div className='flex flex-col gap-8 w-full'>
 				<JoinBoardForm />
-				<p className='text-sm text-muted-foreground'>No members yet. Join with a LeetCode username.</p>
+				<p className='text-sm text-muted-foreground'>
+					No members yet. Join with a LeetCode username.
+				</p>
 			</div>
 		);
 	}
@@ -69,12 +71,6 @@ export const BoardWorkspace = ({ members }: BoardWorkspaceProps) => {
 	return (
 		<div className='flex flex-col gap-8 w-full'>
 			<section className='space-y-3'>
-				<div>
-					<h3 className='text-sm font-medium'>Join the board</h3>
-					<p className='text-sm text-muted-foreground'>
-						Drop a LeetCode username. Stats, streak, and Elo refresh from the live API.
-					</p>
-				</div>
 				<JoinBoardForm />
 			</section>
 

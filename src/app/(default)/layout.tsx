@@ -18,18 +18,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 								Leetcode crew board
 							</Link>
 						</h1>
-						<h2 className='text-lg text-muted-foreground mb-2'>
-							Habit heatmaps, streaks, and Elo — join with a username
-						</h2>
-						{/*
-            <h3 className='text-md text-muted-foreground'>
-							shoutout to <Link href='https://www.youtube.com/@jamesperaltaSWE'>James Peralta</Link>
-							, <Link href='https://github.com/zerotrac/leetcode_problem_rating'>zerotrack</Link>,{' '}
-							<Link href='https://github.com/openstatusHQ/data-table-filters'>openstatus</Link>,{' '}
-							<Link href='https://ui.shadcn.com'>shadcn ui</Link>,{' '}
-							<Link href='https://tanstack.com/table'>tanstack table</Link>
-						</h3>
-              */}
 					</div>
 					<Separator />
 					{children}
@@ -37,7 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 						variant='outline'
 						className='absolute -top-2.5 pt-1 left-4 bg-background sm:left-8'
 					>
-						Try hard mode: &nbsp;<span className='text-green-600 font-semibold'>Still On</span>
+						Try hard mode: &nbsp;<span className='text-green-600 font-semibold'>On</span>
 					</Badge>
 				</div>
 				<SocialsFooter />

@@ -56,7 +56,7 @@ export const JoinBoardForm = () => {
 				/>
 			</div>
 			<div className='flex-1 space-y-1.5'>
-				<Label htmlFor='display-name'>Display name (optional)</Label>
+				<Label htmlFor='display-name'>Display name</Label>
 				<Input
 					id='display-name'
 					name='displayName'

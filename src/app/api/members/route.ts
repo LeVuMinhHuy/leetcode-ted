@@ -12,7 +12,7 @@ export const GET = async () => {
 
 export const POST = async (request: Request) => {
 	try {
-		const body = (await request.json()) as { username?: string; displayName?: string };
+		const body = await request.json();
 		const username = body.username?.trim() ?? '';
 		const displayName = body.displayName?.trim();
 

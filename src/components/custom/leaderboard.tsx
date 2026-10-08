@@ -66,7 +66,9 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 								<span
 									className={cn(
 										'tabular-nums font-medium',
-										member.currentStreak > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-muted-foreground'
+										member.currentStreak > 0
+											? 'text-orange-700 dark:text-orange-400'
+											: 'text-muted-foreground'
 									)}
 								>
 									{member.currentStreak}

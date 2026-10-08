@@ -13,9 +13,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 						<h1 className='text-3xl font-semibold text-foreground pt-4 pb-4'>
 							<Link
 								className='text-gray-500 hover:text-blue-800'
-								href='https://clist.by/coder/ted/'
+								href='https://clist.by/problems/?resource=102&field=accepted_rate&rating_from=1300&rating_to=1500'
 							>
-								Leetcode crew board
+								Leetcode problems by elo
 							</Link>
 						</h1>
 					</div>

@@ -74,15 +74,7 @@ export const BoardWorkspace = ({ members }: BoardWorkspaceProps) => {
 				<JoinBoardForm />
 			</section>
 
-			<Separator />
-
 			<section className='space-y-3'>
-				<div>
-					<h3 className='text-sm font-medium'>Leaderboard</h3>
-					<p className='text-sm text-muted-foreground'>
-						Contest Elo when rated. Grind Elo when not. Click a row to open their habit map.
-					</p>
-				</div>
 				<Leaderboard
 					members={members}
 					selectedUsername={selected.username}

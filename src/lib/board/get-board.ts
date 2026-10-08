@@ -13,7 +13,8 @@ export const getBoard = async (): Promise<MemberSnapshot[]> => {
 	const snapshots = await Promise.all(
 		members.map(async (member) => {
 			try {
-				return await fetchMemberSnapshot(member.username, member.displayName);
+				const data = await fetchMemberSnapshot(member.username, member.displayName);
+				return data;
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'Failed to load member';
 				return {

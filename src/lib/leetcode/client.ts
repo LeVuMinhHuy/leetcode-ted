@@ -42,10 +42,19 @@ export const fetchLeetCodeProfile = async (username: string): Promise<LeetCodePr
 export const fetchLeetCodeStats = async (username: string): Promise<LeetCodeStats> =>
 	unwrap(await fetchEnvelope<LeetCodeStats>(userPath(username, '/stats')), 'stats');
 
-export const fetchLeetCodeContests = async (
-	username: string
-): Promise<LeetCodeContestHistory> =>
-	unwrap(await fetchEnvelope<LeetCodeContestHistory>(userPath(username, '/contests')), 'contests');
+const EMPTY_CONTESTS: LeetCodeContestHistory = {
+	count: 0,
+	rating: null,
+	maxRating: null,
+	rank: null,
+	globalRanking: null,
+	topPercentage: null,
+};
+
+export const fetchLeetCodeContests = async (username: string) => {
+	const envelope = await fetchEnvelope<LeetCodeContestHistory>(userPath(username, '/contests'));
+	return envelope.status === 'success' && envelope.data ? envelope.data : EMPTY_CONTESTS;
+};
 
 export const fetchLeetCodeHeatmap = async (
 	username: string,

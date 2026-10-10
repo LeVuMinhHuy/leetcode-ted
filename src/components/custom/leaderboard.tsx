@@ -57,10 +57,36 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 							<td className='py-3 pr-3'>
 								<div className='flex items-center gap-2'>
 									<span className='tabular-nums font-semibold'>{member.elo}</span>
-									<Badge variant='outline' className='font-normal text-[10px] px-1.5'>
-										{member.eloSource === 'contest' ? 'contest' : 'grind'}
-									</Badge>
 								</div>
+							</td>
+							<td className='py-3 pr-3 w-[320px] max-w-[320px]'>
+								{member.recentSubmissions.length > 0 ? (
+									<ul className='space-y-1'>
+										{member.recentSubmissions.map((submission) => (
+											<li key={submission.url} className='flex items-center gap-2 min-w-0'>
+												<span
+													className={cn(
+														'h-2 w-2 shrink-0 rounded-full',
+														submission.status === 'Accepted' ? 'bg-green-500' : 'bg-yellow-500'
+													)}
+													title={submission.status}
+												/>
+												<a
+													href={submission.url}
+													target='_blank'
+													rel='noopener noreferrer'
+													title={submission.title}
+													onClick={(e) => e.stopPropagation()}
+													className='min-w-0 truncate hover:underline'
+												>
+													{submission.title}
+												</a>
+											</li>
+										))}
+									</ul>
+								) : (
+									<span className='text-muted-foreground'>-</span>
+								)}
 							</td>
 							<td className='py-3 pr-3'>
 								<span

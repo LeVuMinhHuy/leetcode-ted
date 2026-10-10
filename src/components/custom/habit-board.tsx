@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { DailyContribution } from '@/lib/leetcode/types';
+import type { DailyContribution, MemberSnapshot } from '@/lib/leetcode/types';
 import { cn } from '@/lib/utils';
 
 export type HabitBoardProps = {
@@ -16,6 +16,7 @@ export type HabitBoardProps = {
 	totalQuestions: number;
 	displayName: string;
 	onYearChange?: (year: number) => void;
+	recentSubmissions: MemberSnapshot['recentSubmissions'];
 };
 
 const getProblemCountMap = (contributions: DailyContribution[]): Map<string, number> => {
@@ -84,6 +85,7 @@ const HabitBoard = ({
 	totalQuestions,
 	displayName,
 	onYearChange,
+	recentSubmissions,
 }: HabitBoardProps) => {
 	const problemCountMap = useMemo(() => getProblemCountMap(contributions), [contributions]);
 	const months = Array.from({ length: 12 }, (_, i) => i);
@@ -106,8 +108,7 @@ const HabitBoard = ({
 						<span className='text-muted-foreground font-normal ml-1'>best {longestStreak}</span>
 					</span>
 					<span className='text-green-700 dark:text-green-400 font-medium'>
-						{displayName} solved{' '}
-						<span className='font-semibold'>{totalSolved}</span>{' '}
+						{displayName} solved <span className='font-semibold'>{totalSolved}</span>{' '}
 						<span className='font-medium'>{`(of ${totalQuestions})`}</span>
 					</span>
 				</div>

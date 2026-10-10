@@ -10,6 +10,7 @@ const compareMembers = (a: MemberSnapshot, b: MemberSnapshot): number => {
 
 export const getBoard = async (): Promise<MemberSnapshot[]> => {
 	const members = await listBoardMembers();
+
 	const snapshots = await Promise.all(
 		members.map(async (member) => {
 			try {

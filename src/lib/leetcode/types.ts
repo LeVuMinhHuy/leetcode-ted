@@ -3,6 +3,12 @@ export type LeetCodeEnvelope<T> = {
 	message?: string;
 	username?: string;
 	cached?: boolean;
+	recentSubmissions?: {
+		title: string;
+		titleSlug: string;
+		timestamp: number;
+		statusDisplay: string;
+	}[];
 	data: T | null;
 };
 
@@ -12,6 +18,12 @@ export type LeetCodeProfile = {
 	avatar: string | null;
 	country: string | null;
 	bio: string | null;
+	recentSubmissions: {
+		title: string;
+		titleSlug: string;
+		timestamp: number;
+		statusDisplay: string;
+	}[];
 };
 
 export type LeetCodeStats = {
@@ -87,4 +99,9 @@ export type MemberSnapshot = {
 	contributions: DailyContribution[];
 	availableYears: number[];
 	error?: string;
+	recentSubmissions: {
+		title: string;
+		url: string;
+		status: 'Accepted' | 'In progress';
+	}[];
 };

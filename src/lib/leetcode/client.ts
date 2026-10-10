@@ -33,6 +33,13 @@ const unwrap = <T>(envelope: LeetCodeEnvelope<T>, label: string): T => {
 		throw new Error(envelope.message || `Failed to load ${label}`);
 	}
 
+	if (label === 'profile') {
+		return {
+			...envelope.data,
+			recentSubmissions: envelope.recentSubmissions,
+		};
+	}
+
 	return envelope.data;
 };
 
@@ -142,6 +149,26 @@ export const fetchMemberSnapshot = async (
 		availableYears: heatmap.availableYears.length
 			? heatmap.availableYears
 			: heatmap.yearlyContributions.map((entry) => entry.year),
+		recentSubmissions: [
+			...profile.recentSubmissions
+				.filter(
+					(s) => +s.timestamp >= Math.floor((Date.now() + 25200000) / 86400000) * 86400 - 25200
+				)
+				.sort((a, b) => +b.timestamp - +a.timestamp)
+				.reduce(
+					(m, s) =>
+						m.set(s.titleSlug, {
+							title: s.title,
+							url: `https://leetcode.com/problems/${s.titleSlug}/`,
+							status:
+								s.statusDisplay === 'Accepted' || m.get(s.titleSlug)?.status === 'Accepted'
+									? 'Accepted'
+									: 'In progress',
+						}),
+					new Map<string, { title: string; url: string; status: 'Accepted' | 'In progress' }>()
+				)
+				.values(),
+		],
 	};
 };
 

@@ -95,6 +95,7 @@ export const BoardWorkspace = ({ members }: BoardWorkspaceProps) => {
 					totalQuestions={selected.totalQuestions}
 					displayName={selected.displayName}
 					onYearChange={onYearChange}
+					recentSubmissions={selected.recentSubmissions}
 				/>
 			</section>
 		</div>

@@ -41,6 +41,7 @@ export const getBoard = async (): Promise<MemberSnapshot[]> => {
 					contributions: [],
 					availableYears: [new Date().getFullYear()],
 					error: message,
+					recentSubmissions: [],
 				} satisfies MemberSnapshot;
 			}
 		})

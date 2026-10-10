@@ -18,6 +18,7 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 					<th className='py-2 pr-3 font-medium'>#</th>
 					<th className='py-2 pr-3 font-medium'>Member</th>
 					<th className='py-2 pr-3 font-medium'>Elo</th>
+					<th className='py-2 pr-3 font-medium w-[240px] max-w-[240px]'>Today</th>
 					<th className='py-2 pr-3 font-medium'>Streak</th>
 					<th className='py-2 pr-3 font-medium'>Solved</th>
 					<th className='py-2 font-medium'>E / M / H</th>

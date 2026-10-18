@@ -20,8 +20,8 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 					<th className='py-2 pr-3 font-medium'>Elo</th>
 					<th className='py-2 pr-3 font-medium w-[240px] max-w-[240px]'>Today</th>
 					<th className='py-2 pr-3 font-medium'>Streak</th>
-					<th className='py-2 pr-3 font-medium'>Solved</th>
-					<th className='py-2 font-medium'>E / M / H</th>
+					<th className='hidden xl:table-cell py-2 pr-3 font-medium'>Solved</th>
+					<th className='hidden xl:table-cell py-2 font-medium'>E / M / H</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -60,7 +60,7 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 									<span className='tabular-nums font-semibold'>{member.elo}</span>
 								</div>
 							</td>
-							<td className='py-3 pr-3 w-[320px] max-w-[320px]'>
+							<td className='py-3 pr-3 w-[120px] max-w-[120px] md:w-[280px] md:max-w-[280px] lg:w-[520px] lg:max-w-[520px]'>
 								{member.recentSubmissions.length > 0 ? (
 									<ul className='space-y-1'>
 										{member.recentSubmissions.map((submission) => (
@@ -102,8 +102,8 @@ export const Leaderboard = ({ members, selectedUsername, onSelect }: Leaderboard
 								</span>
 								<span className='text-muted-foreground text-xs ml-1'>/ {member.longestStreak}</span>
 							</td>
-							<td className='py-3 pr-3 tabular-nums'>{member.totalSolved}</td>
-							<td className='py-3 tabular-nums text-muted-foreground'>
+							<td className='hidden xl:table-cell py-3 pr-3 tabular-nums'>{member.totalSolved}</td>
+							<td className='hidden xl:table-cell py-3 tabular-nums text-muted-foreground'>
 								{member.easy} / {member.medium} / {member.hard}
 							</td>
 						</tr>

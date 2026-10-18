@@ -24,24 +24,17 @@ export const deriveGrindElo = ({
 	);
 
 export const resolveElo = ({
-	contestRating,
 	easy,
 	medium,
 	hard,
 	currentStreak,
 }: {
-	contestRating: number | null;
 	easy: number;
 	medium: number;
 	hard: number;
 	currentStreak: number;
-}): { elo: number; eloSource: 'contest' | 'derived' } => {
-	if (contestRating && contestRating > 0) {
-		return { elo: Math.round(contestRating), eloSource: 'contest' };
-	}
-
+}): { elo: number } => {
 	return {
 		elo: deriveGrindElo({ easy, medium, hard, currentStreak }),
-		eloSource: 'derived',
 	};
 };

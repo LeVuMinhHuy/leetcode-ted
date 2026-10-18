@@ -151,9 +151,7 @@ export const fetchMemberSnapshot = async (
 			: heatmap.yearlyContributions.map((entry) => entry.year),
 		recentSubmissions: [
 			...profile.recentSubmissions
-				.filter(
-					(s) => +s.timestamp >= Math.floor((Date.now() + 25200000) / 86400000) * 86400 - 25200
-				)
+				.filter((s) => +s.timestamp >= Math.floor((Date.now() + 25200000) / 86400000) * 86400)
 				.sort((a, b) => +b.timestamp - +a.timestamp)
 				.reduce(
 					(m, s) =>

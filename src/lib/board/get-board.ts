@@ -34,7 +34,6 @@ export const getBoard = async (): Promise<MemberSnapshot[]> => {
 					contestRank: null,
 					globalContestRanking: null,
 					elo: 0,
-					eloSource: 'derived' as const,
 					currentStreak: 0,
 					longestStreak: 0,
 					year: new Date().getFullYear(),

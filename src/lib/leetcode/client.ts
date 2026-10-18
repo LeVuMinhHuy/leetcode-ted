@@ -117,8 +117,7 @@ export const fetchMemberSnapshot = async (
 	]);
 
 	const year = pickDefaultYear(heatmap);
-	const { elo, eloSource } = resolveElo({
-		contestRating: contests.rating,
+	const { elo } = resolveElo({
 		easy: stats.byDifficulty.easy,
 		medium: stats.byDifficulty.medium,
 		hard: stats.byDifficulty.hard,
@@ -141,7 +140,6 @@ export const fetchMemberSnapshot = async (
 		contestRank: contests.rank,
 		globalContestRanking: contests.globalRanking,
 		elo,
-		eloSource,
 		currentStreak: heatmap.currentStreak,
 		longestStreak: heatmap.longestStreak,
 		year,

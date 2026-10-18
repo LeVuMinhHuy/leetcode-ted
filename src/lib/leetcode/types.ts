@@ -92,7 +92,6 @@ export type MemberSnapshot = {
 	contestRank: string | null;
 	globalContestRanking: number | null;
 	elo: number;
-	eloSource: 'contest' | 'derived';
 	currentStreak: number;
 	longestStreak: number;
 	year: number;

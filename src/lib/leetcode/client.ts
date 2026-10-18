@@ -1,5 +1,6 @@
 import { LC_STATS_API } from '@/constants/data-source';
 import type {
+	DailyContribution,
 	HeatmapDay,
 	LeetCodeContestHistory,
 	LeetCodeEnvelope,
@@ -9,8 +10,10 @@ import type {
 	MemberSnapshot,
 } from '@/lib/leetcode/types';
 import { resolveElo } from '@/lib/leetcode/elo';
+import { EXCUSED_DATES } from '@/constants/members';
 
 const REVALIDATE_SECONDS = 300;
+const DAY = 86400;
 
 const fetchEnvelope = async <T>(path: string): Promise<LeetCodeEnvelope<T>> => {
 	const response = await fetch(`${LC_STATS_API}${path}`, {
@@ -107,7 +110,8 @@ const contributionsForYear = (days: HeatmapDay[], year: number) =>
 
 export const fetchMemberSnapshot = async (
 	username: string,
-	displayNameHint?: string
+	displayNameHint?: string,
+	excusedDates: string[] = []
 ): Promise<MemberSnapshot> => {
 	const [profile, stats, contests, heatmap] = await Promise.all([
 		fetchLeetCodeProfile(username),
@@ -117,11 +121,17 @@ export const fetchMemberSnapshot = async (
 	]);
 
 	const year = pickDefaultYear(heatmap);
+
+	const { currentStreak, longestStreak } = computeStreaks(
+		heatmap.dailyContributions,
+		EXCUSED_DATES[username]
+	);
+
 	const { elo } = resolveElo({
 		easy: stats.byDifficulty.easy,
 		medium: stats.byDifficulty.medium,
 		hard: stats.byDifficulty.hard,
-		currentStreak: heatmap.currentStreak,
+		currentStreak,
 	});
 
 	return {
@@ -140,8 +150,8 @@ export const fetchMemberSnapshot = async (
 		contestRank: contests.rank,
 		globalContestRanking: contests.globalRanking,
 		elo,
-		currentStreak: heatmap.currentStreak,
-		longestStreak: heatmap.longestStreak,
+		currentStreak,
+		longestStreak,
 		year,
 		contributions: contributionsForYear(heatmap.dailyContributions, year),
 		availableYears: heatmap.availableYears.length
@@ -149,7 +159,7 @@ export const fetchMemberSnapshot = async (
 			: heatmap.yearlyContributions.map((entry) => entry.year),
 		recentSubmissions: [
 			...profile.recentSubmissions
-				.filter((s) => +s.timestamp >= Math.floor((Date.now() + 25200000) / 86400000) * 86400)
+				.filter((s) => +s.timestamp >= Math.floor((Date.now() + 25200000) / (DAY * 1000)) * DAY)
 				.sort((a, b) => +b.timestamp - +a.timestamp)
 				.reduce(
 					(m, s) =>
@@ -179,3 +189,44 @@ export const fetchMemberYearContributions = async (username: string, year: numbe
 		availableYears: heatmap.availableYears,
 	};
 };
+
+const toKey = (tsSeconds: number) => new Date(tsSeconds * 1000).toISOString().slice(0, 10);
+
+export function computeStreaks(
+	days: DailyContribution[],
+	excusedDates: string[] = [],
+	nowMs = Date.now()
+) {
+	const solved = new Set(days.filter((d) => d.count > 0).map((d) => d.date));
+	const excused = new Set(excusedDates);
+	const ok = (k: string) => solved.has(k) || excused.has(k);
+
+	let t = Math.floor(nowMs / 1000 / DAY) * DAY;
+	if (!ok(toKey(t))) t -= DAY;
+
+	let currentStreak = 0;
+
+	while (ok(toKey(t))) {
+		if (solved.has(toKey(t))) currentStreak++; // excused days
+		t -= DAY;
+	}
+
+	const dates = days.map((d) => d.date).sort();
+	let longestStreak = 0;
+	let run = 0;
+	if (dates.length) {
+		const start = Date.parse(dates[0]) / 1000;
+		const end = Math.floor(nowMs / 1000 / DAY) * DAY;
+		for (let s = start; s <= end; s += DAY) {
+			const k = toKey(s);
+			if (solved.has(k)) {
+				run++;
+				longestStreak = Math.max(longestStreak, run);
+			} else if (!excused.has(k)) {
+				run = 0;
+			}
+		}
+	}
+
+	return { currentStreak, longestStreak };
+}

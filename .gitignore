@@ -37,3 +37,9 @@ next-env.d.ts
 
 # my data
 src/data/*
+
+# backend build outputs
+backend/build/
+backend/.gradle/
+backend/lambda/function.zip
+backend/scripts/com/

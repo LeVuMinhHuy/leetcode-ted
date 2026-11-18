@@ -1,0 +1,52 @@
+name: Deploy email Lambda
+
+on:
+  push:
+    branches: [trunk]
+    paths:
+      - "backend/lambda/**"
+      - ".github/workflows/deploy-lambda.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lambda
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+  AWS_ROLE_ARN: arn:aws:iam::529088301474:role/leetcode-ted-github-deploy
+  FUNCTION_NAME: leetcode-ted-email-consumer
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/lambda
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: node --check index.mjs
+
+      - run: zip -j function.zip index.mjs package.json
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Code only: environment variables and the SQS trigger are managed in AWS.
+      - run: |
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://function.zip \
+            --query '[FunctionName, CodeSha256]' --output text
+          aws lambda wait function-updated --function-name "$FUNCTION_NAME"

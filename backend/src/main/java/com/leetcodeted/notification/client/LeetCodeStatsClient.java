@@ -9,6 +9,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * HTTP client that queries the LeetCode stats API to check whether a member
@@ -65,9 +66,37 @@ public class LeetCodeStatsClient {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Private DTOs — mapped from the heatmap API response
-    // -------------------------------------------------------------------------
+    /**
+     * Returns the member's most recent submissions (newest first, ~20 max),
+     * or empty if the API call fails — callers must not treat failure as "no submissions".
+     */
+    public Optional<List<RecentSubmission>> fetchRecentSubmissions(String username) {
+        try {
+            ProfileEnvelope envelope = restClient.get()
+                    .uri("/{username}/profile", username)
+                    .retrieve()
+                    .body(ProfileEnvelope.class);
+
+            if (envelope == null || !"success".equals(envelope.status())) {
+                log.warn("LeetCode stats API returned unexpected profile response for user '{}'", username);
+                return Optional.empty();
+            }
+            List<RecentSubmission> submissions = envelope.recentSubmissions();
+            return Optional.of(submissions == null ? List.of() : submissions);
+        } catch (Exception ex) {
+            log.warn("Failed to fetch LeetCode profile for user '{}': {}", username, ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** {@code timestamp} is epoch seconds; the API sends it as a string. */
+    public record RecentSubmission(String title, String titleSlug, long timestamp, String statusDisplay) {
+        public boolean accepted() {
+            return "Accepted".equals(statusDisplay);
+        }
+    }
+
+    private record ProfileEnvelope(String status, List<RecentSubmission> recentSubmissions) {}
 
     private record HeatmapEnvelope(String status, HeatmapData data) {}
 

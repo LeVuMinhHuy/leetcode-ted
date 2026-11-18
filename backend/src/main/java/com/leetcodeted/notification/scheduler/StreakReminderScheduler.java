@@ -29,6 +29,9 @@ public class StreakReminderScheduler {
 
     @Scheduled(cron = "0 0 14 * * *")
     public void sendStreakReminder() {
+        if (!notificationService.isEnabled()) {
+            return;
+        }
         List<BoardMember> members = boardMemberRepository.findAllByEmailIsNotNull();
 
         List<BoardMember> laggards = members.stream()

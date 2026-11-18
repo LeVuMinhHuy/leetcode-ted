@@ -1,6 +1,7 @@
 package com.leetcodeted.notification.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.leetcodeted.notification.client.LeetCodeStatsClient.RecentSubmission;
 import com.leetcodeted.notification.model.BoardMember;
 import com.leetcodeted.notification.repository.BoardMemberRepository;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -13,13 +14,11 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Publishes domain events to AWS SQS when {@code app.notifications.enabled} is true.
  *
- * <p>All failures are swallowed and logged at ERROR level — notification delivery
- * is best-effort and must never break the calling flow.
+ * <p>All failures are swallowed and logged — notification delivery is best-effort.
  */
 @Slf4j
 @Service
@@ -36,98 +35,83 @@ public class NotificationService {
     private final BoardMemberRepository boardMemberRepository;
     private final ObjectMapper objectMapper;
 
-    /**
-     * Publishes a {@code member_solved} event so other board members receive a nudge.
-     *
-     * @param solverUsername    LeetCode username of the member who just solved
-     * @param solverDisplayName display name of the solver
-     * @param problemId         LeetCode problem id that was solved
-     */
-    public void publishMemberSolved(String solverUsername, String solverDisplayName, int problemId) {
-        if (!notificationsEnabled) {
-            log.debug("SQS notifications disabled, skipping member_solved");
-            return;
-        }
-        if (queueUrl == null || queueUrl.isBlank()) {
-            log.warn("app.sqs.queue-url is not configured, skipping member_solved");
-            return;
-        }
+    public boolean isEnabled() {
+        return notificationsEnabled;
+    }
 
-        List<BoardMember> members = boardMemberRepository.findAllByEmailIsNotNull();
-        List<Map<String, String>> recipients = members.stream()
-                .filter(m -> !solverUsername.equals(m.getUsername()))
-                .filter(m -> m.getEmail() != null)
-                .map(m -> Map.of("username", m.getUsername(), "email", m.getEmail()))
-                .collect(Collectors.toList());
-
-        if (recipients.isEmpty()) {
-            log.debug("No recipients for member_solved event (solver='{}'), skipping", solverUsername);
-            return;
-        }
-
-        Map<String, Object> payload = Map.of(
-                "event", "member_solved",
-                "solver", Map.of("username", solverUsername, "displayName", solverDisplayName),
-                "problemId", problemId,
-                "recipients", recipients
-        );
-
+    public void publishMemberSolved(BoardMember solver, RecentSubmission submission) {
         try {
-            String json = objectMapper.writeValueAsString(payload);
-            sqsTemplate.send(queueUrl, json);
-            log.debug("Published member_solved: solver='{}', problemId={}, recipients={}",
-                    solverUsername, problemId, recipients.size());
+            List<Map<String, String>> recipients = boardMemberRepository.findAllByEmailIsNotNull().stream()
+                    .filter(m -> !solver.getUsername().equals(m.getUsername()))
+                    .map(m -> Map.of("username", m.getUsername(), "email", m.getEmail()))
+                    .toList();
+
+            if (recipients.isEmpty()) {
+                log.debug("No recipients for member_solved (solver='{}'), skipping", solver.getUsername());
+                return;
+            }
+
+            Map<String, Object> payload = Map.of(
+                    "event", "member_solved",
+                    "solver", Map.of("username", solver.getUsername(), "displayName", displayNameOf(solver)),
+                    "problem", Map.of(
+                            "title", submission.title(),
+                            "titleSlug", submission.titleSlug(),
+                            "url", "https://leetcode.com/problems/" + submission.titleSlug() + "/"),
+                    "recipients", recipients
+            );
+            send("member_solved", payload);
         } catch (Exception e) {
             log.error("Failed to publish member_solved event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Publishes a {@code streak_reminder} event for members who have not solved today.
-     *
-     * <p>{@code currentStreak} is set to {@code 0} here — the email consumer
-     * can look it up from the database if the actual value is needed.
-     *
-     * @param laggards board members who have not solved a problem today
+     * {@code currentStreak} is always 0 — the scheduler has no streak data; the consumer can look it up.
      */
     public void publishStreakReminder(List<BoardMember> laggards) {
-        if (!notificationsEnabled) {
-            log.debug("SQS notifications disabled, skipping streak_reminder");
-            return;
-        }
-        if (queueUrl == null || queueUrl.isBlank()) {
-            log.warn("app.sqs.queue-url is not configured, skipping streak_reminder");
-            return;
-        }
-
         if (laggards == null || laggards.isEmpty()) {
             log.debug("No laggards today, skipping streak_reminder");
             return;
         }
-
-        List<Map<String, Object>> laggardDtos = laggards.stream()
-                .map(m -> {
-                    Map<String, Object> entry = new LinkedHashMap<>();
-                    entry.put("username", m.getUsername());
-                    entry.put("displayName", m.getDisplayName());
-                    entry.put("email", m.getEmail());
-                    entry.put("currentStreak", 0);
-                    return entry;
-                })
-                .collect(Collectors.toList());
-
-        Map<String, Object> payload = Map.of(
-                "event", "streak_reminder",
-                "sentAt", Instant.now().toString(),
-                "laggards", laggardDtos
-        );
-
         try {
-            String json = objectMapper.writeValueAsString(payload);
-            sqsTemplate.send(queueUrl, json);
-            log.debug("Published streak_reminder for {} laggard(s)", laggards.size());
+            List<Map<String, Object>> laggardDtos = laggards.stream()
+                    .map(m -> {
+                        Map<String, Object> entry = new LinkedHashMap<>();
+                        entry.put("username", m.getUsername());
+                        entry.put("displayName", displayNameOf(m));
+                        entry.put("email", m.getEmail());
+                        entry.put("currentStreak", 0);
+                        return entry;
+                    })
+                    .toList();
+
+            Map<String, Object> payload = Map.of(
+                    "event", "streak_reminder",
+                    "sentAt", Instant.now().toString(),
+                    "laggards", laggardDtos
+            );
+            send("streak_reminder", payload);
         } catch (Exception e) {
             log.error("Failed to publish streak_reminder event: {}", e.getMessage(), e);
         }
+    }
+
+    private void send(String event, Map<String, Object> payload) throws Exception {
+        if (!notificationsEnabled) {
+            log.debug("SQS notifications disabled, skipping {}", event);
+            return;
+        }
+        if (queueUrl == null || queueUrl.isBlank()) {
+            log.warn("app.sqs.queue-url is not configured, skipping {}", event);
+            return;
+        }
+        sqsTemplate.send(queueUrl, objectMapper.writeValueAsString(payload));
+        log.debug("Published {}", event);
+    }
+
+    private static String displayNameOf(BoardMember member) {
+        String name = member.getDisplayName();
+        return name == null || name.isBlank() ? member.getUsername() : name;
     }
 }

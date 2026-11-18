@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Maps the existing {@code board_members} collection, which is also written by the Next.js app.
@@ -30,4 +31,12 @@ public class BoardMember {
     private String email;
 
     private Instant joinedAt;
+
+    // Solve-poller state. Written only via partial $set updates — never save() this entity,
+    // or fields the Next.js app owns could be overwritten.
+    private Long lastSeenSubmissionTs;
+
+    private String notifiedDate;
+
+    private List<String> notifiedSlugs;
 }

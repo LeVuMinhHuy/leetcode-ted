@@ -3,17 +3,22 @@ package com.leetcodeted.notification.client;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * HTTP client that queries the LeetCode stats API to check whether a member
- * has solved at least one problem today (Vietnam timezone).
+ * Reads member activity: recent submissions straight from LeetCode GraphQL, and the
+ * streak count from the third-party stats API.
  *
  * <p>Thread-safe: {@link RestClient} is immutable after construction.
  */
@@ -23,15 +28,37 @@ public class LeetCodeStatsClient {
 
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
+    private static final String LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql";
+
+    private static final String RECENT_SUBMISSIONS_QUERY = """
+            query recentSubmissions($username: String!) {
+              recentSubmissionList(username: $username, limit: 20) {
+                title titleSlug timestamp statusDisplay
+              }
+            }""";
+
     @Value("${app.leetcode.stats-api}")
     private String statsApiBaseUrl;
 
     private RestClient restClient;
 
+    // The stats API caches LeetCode data server-side for hours, so solve detection
+    // must query LeetCode directly.
+    private RestClient graphqlClient;
+
     @PostConstruct
     void init() {
         restClient = RestClient.builder()
                 .baseUrl(statsApiBaseUrl)
+                .build();
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
+        graphqlClient = RestClient.builder()
+                .baseUrl(LEETCODE_GRAPHQL_URL)
+                .requestFactory(requestFactory)
+                .defaultHeader("Referer", "https://leetcode.com")
                 .build();
     }
 
@@ -40,30 +67,11 @@ public class LeetCodeStatsClient {
      * (Asia/Ho_Chi_Minh), {@code false} on failure or no submission.
      */
     public boolean hasSolvedToday(String username) {
-        String today = LocalDate.now(VN_ZONE).toString(); // "yyyy-MM-dd"
-        try {
-            HeatmapEnvelope envelope = restClient.get()
-                    .uri("/{username}/heatmap", username)
-                    .retrieve()
-                    .body(HeatmapEnvelope.class);
-
-            if (envelope == null || !"success".equals(envelope.status()) || envelope.data() == null) {
-                log.warn("LeetCode stats API returned unexpected response for user '{}'", username);
-                return false;
-            }
-
-            List<DailyEntry> daily = envelope.data().dailyContributions();
-            if (daily == null) {
-                return false;
-            }
-
-            return daily.stream()
-                    .anyMatch(e -> today.equals(e.date()) && e.count() > 0);
-
-        } catch (Exception ex) {
-            log.warn("Failed to fetch LeetCode heatmap for user '{}': {}", username, ex.getMessage());
-            return false;
-        }
+        LocalDate today = LocalDate.now(VN_ZONE);
+        return fetchRecentSubmissions(username)
+                .map(submissions -> submissions.stream().anyMatch(s ->
+                        Instant.ofEpochSecond(s.timestamp()).atZone(VN_ZONE).toLocalDate().equals(today)))
+                .orElse(false);
     }
 
     /**
@@ -72,19 +80,19 @@ public class LeetCodeStatsClient {
      */
     public Optional<List<RecentSubmission>> fetchRecentSubmissions(String username) {
         try {
-            ProfileEnvelope envelope = restClient.get()
-                    .uri("/{username}/profile", username)
+            GraphQlEnvelope envelope = graphqlClient.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("query", RECENT_SUBMISSIONS_QUERY, "variables", Map.of("username", username)))
                     .retrieve()
-                    .body(ProfileEnvelope.class);
+                    .body(GraphQlEnvelope.class);
 
-            if (envelope == null || !"success".equals(envelope.status())) {
-                log.warn("LeetCode stats API returned unexpected profile response for user '{}'", username);
+            if (envelope == null || envelope.data() == null || envelope.data().recentSubmissionList() == null) {
+                log.warn("LeetCode GraphQL returned no recentSubmissionList for user '{}'", username);
                 return Optional.empty();
             }
-            List<RecentSubmission> submissions = envelope.recentSubmissions();
-            return Optional.of(submissions == null ? List.of() : submissions);
+            return Optional.of(envelope.data().recentSubmissionList());
         } catch (Exception ex) {
-            log.warn("Failed to fetch LeetCode profile for user '{}': {}", username, ex.getMessage());
+            log.warn("Failed to fetch recent submissions for user '{}': {}", username, ex.getMessage());
             return Optional.empty();
         }
     }
@@ -94,9 +102,16 @@ public class LeetCodeStatsClient {
         public boolean accepted() {
             return "Accepted".equals(statusDisplay);
         }
+
+        /** LeetCode lists a submission with an empty status for a second or so while judging. */
+        public boolean judging() {
+            return statusDisplay == null || statusDisplay.isBlank();
+        }
     }
 
-    private record ProfileEnvelope(String status, List<RecentSubmission> recentSubmissions) {}
+    private record GraphQlEnvelope(RecentSubmissionData data) {}
+
+    private record RecentSubmissionData(List<RecentSubmission> recentSubmissionList) {}
 
     /** Returns the member's current daily solve streak, or 0 on failure. */
     public int fetchCurrentStreak(String username) {

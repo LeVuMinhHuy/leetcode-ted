@@ -118,6 +118,21 @@ class SolvedSubmissionPollerTest {
     }
 
     @Test
+    void waitsForJudgingToFinishBeforeAdvancingWatermark() {
+        long watermark = now - 600;
+        BoardMember member = member(watermark, null, null);
+
+        poller.process(member, List.of(judging("harshad-number", now - 1), accepted("two-sum", now - 30)));
+
+        verify(notificationService, never()).publishMemberSolved(any(), any());
+        verifyNoInteractions(mongoTemplate);
+
+        poller.process(member, List.of(accepted("harshad-number", now - 1), accepted("two-sum", now - 30)));
+
+        verify(notificationService, times(2)).publishMemberSolved(eq(member), any());
+    }
+
+    @Test
     void noWriteWhenNothingNew() {
         BoardMember member = member(now, null, null);
 
@@ -143,6 +158,10 @@ class SolvedSubmissionPollerTest {
 
     private static RecentSubmission accepted(String slug, long ts) {
         return new RecentSubmission(slug, slug, ts, "Accepted");
+    }
+
+    private static RecentSubmission judging(String slug, long ts) {
+        return new RecentSubmission(slug, slug, ts, "");
     }
 
     private static RecentSubmission wrongAnswer(String slug, long ts) {

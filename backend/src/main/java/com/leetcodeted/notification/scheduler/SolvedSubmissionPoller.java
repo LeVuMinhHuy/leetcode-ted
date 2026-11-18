@@ -75,6 +75,10 @@ public class SolvedSubmissionPoller {
         if (newestTs <= watermark) {
             return;
         }
+        // Advancing the watermark past a submission still being judged would skip it for good.
+        if (submissions.stream().anyMatch(s -> s.timestamp() > watermark && s.judging())) {
+            return;
+        }
 
         String today = LocalDate.now(VN_ZONE).toString();
         Set<String> notifiedSlugs = new LinkedHashSet<>();

@@ -71,7 +71,7 @@ if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" &
   echo "Updating environment variables..."
   aws lambda update-function-configuration \
     --function-name "$FUNCTION_NAME" \
-    --environment "Variables={AWS_REGION=$REGION,SES_SENDER_EMAIL=$SES_SENDER_EMAIL}" \
+    --environment "Variables={SES_SENDER_EMAIL=$SES_SENDER_EMAIL}" \
     --region "$REGION"
 else
   echo "Creating Lambda function..."
@@ -83,7 +83,7 @@ else
     --zip-file fileb://"$ZIP" \
     --timeout 30 \
     --memory-size 256 \
-    --environment "Variables={AWS_REGION=$REGION,SES_SENDER_EMAIL=$SES_SENDER_EMAIL}" \
+    --environment "Variables={SES_SENDER_EMAIL=$SES_SENDER_EMAIL}" \
     --region "$REGION"
 
   echo "Waiting for function to be active..."

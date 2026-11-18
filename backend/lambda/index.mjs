@@ -40,16 +40,23 @@ async function route(body) {
 async function handleMemberSolved({ solver, problem, recipients }) {
   if (!recipients?.length) return;
 
-  await Promise.all(
-    recipients.map((r) =>
-      sendEmail({
-        to: r.email,
-        subject: `🎉 ${solver.displayName} just solved ${problem.title}!`,
-        html: memberSolvedHtml({ solver, problem, recipient: r }),
-        text: memberSolvedText({ solver, problem }),
-      })
-    )
-  );
+  await sendToEach(recipients, (r) => ({
+    to: r.email,
+    subject: `🎉 ${solver.displayName} just solved ${problem.title}!`,
+    html: memberSolvedHtml({ solver, problem, recipient: r }),
+    text: memberSolvedText({ solver, problem }),
+  }));
+}
+
+// Failures are logged, not thrown: a retry would re-send to every recipient that
+// already got the email, and an unverified address fails the same way every time.
+async function sendToEach(people, buildEmail) {
+  const results = await Promise.allSettled(people.map((p) => sendEmail(buildEmail(p))));
+  results.forEach((result, i) => {
+    if (result.status === "rejected") {
+      console.error(`Failed to email ${people[i].email}:`, result.reason?.message);
+    }
+  });
 }
 
 function memberSolvedHtml({ solver, problem, recipient }) {
@@ -116,16 +123,12 @@ function memberSolvedText({ solver, problem }) {
 async function handleStreakReminder({ laggards }) {
   if (!laggards?.length) return;
 
-  await Promise.all(
-    laggards.map((m) =>
-      sendEmail({
-        to: m.email,
-        subject: streakSubject(m.currentStreak),
-        html: streakReminderHtml(m),
-        text: streakReminderText(m),
-      })
-    )
-  );
+  await sendToEach(laggards, (m) => ({
+    to: m.email,
+    subject: streakSubject(m.currentStreak),
+    html: streakReminderHtml(m),
+    text: streakReminderText(m),
+  }));
 }
 
 function streakSubject(streak) {

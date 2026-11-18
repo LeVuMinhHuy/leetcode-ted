@@ -26,3 +26,22 @@ MONGODB_URI="mongodb+srv://user:pass@host/dbname" java -cp ".:$DRIVER_CP" \
 > **Note:** The URI must include the database name in its path (e.g. `.../leetcode-ted`).
 
 Output: `Updated N documents` — `N` will be 0 on subsequent runs (idempotent).
+
+## MigrateAddCurrentStreak.java
+
+Backfills `currentStreak: null` on existing `board_members` documents that have no `currentStreak` field. Safe to run multiple times (idempotent).
+
+The actual streak value is populated at runtime by `StreakReminderScheduler` when it runs at 21:00 ICT each day — no manual data entry needed.
+
+### Run
+
+Same classpath setup as above, then:
+
+```bash
+# From backend/scripts/
+javac -cp "$DRIVER_CP" MigrateAddCurrentStreak.java
+MONGODB_URI="mongodb+srv://user:pass@host/dbname" java -cp ".:$DRIVER_CP" \
+  com.leetcodeted.notification.scripts.MigrateAddCurrentStreak
+```
+
+Output: `Updated N documents` — `N` will be 0 on subsequent runs (idempotent).

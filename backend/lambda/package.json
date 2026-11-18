@@ -1,0 +1,7 @@
+{
+  "name": "leetcode-ted-email-consumer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SQS consumer — sends emails via AWS SES for member_solved and streak_reminder events",
+  "main": "index.mjs"
+}

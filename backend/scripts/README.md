@@ -18,7 +18,7 @@ DRIVER_CP=$(find "$GRADLE_CACHE/org.mongodb" -name "*.jar" \
   | grep -E "mongodb-driver-sync|mongodb-driver-core|bson" \
   | tr '\n' ':')
 
-javac -cp "$DRIVER_CP" MigrateAddEmail.java
+javac -d . -cp "$DRIVER_CP" MigrateAddEmail.java
 MONGODB_URI="mongodb+srv://user:pass@host/dbname" java -cp ".:$DRIVER_CP" \
   com.leetcodeted.notification.scripts.MigrateAddEmail
 ```
@@ -39,7 +39,7 @@ Same classpath setup as above, then:
 
 ```bash
 # From backend/scripts/
-javac -cp "$DRIVER_CP" MigrateAddCurrentStreak.java
+javac -d . -cp "$DRIVER_CP" MigrateAddCurrentStreak.java
 MONGODB_URI="mongodb+srv://user:pass@host/dbname" java -cp ".:$DRIVER_CP" \
   com.leetcodeted.notification.scripts.MigrateAddCurrentStreak
 ```

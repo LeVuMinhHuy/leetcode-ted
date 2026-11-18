@@ -66,9 +66,6 @@ public class NotificationService {
         }
     }
 
-    /**
-     * {@code currentStreak} is always 0 — the scheduler has no streak data; the consumer can look it up.
-     */
     public void publishStreakReminder(List<BoardMember> laggards) {
         if (laggards == null || laggards.isEmpty()) {
             log.debug("No laggards today, skipping streak_reminder");
@@ -81,7 +78,7 @@ public class NotificationService {
                         entry.put("username", m.getUsername());
                         entry.put("displayName", displayNameOf(m));
                         entry.put("email", m.getEmail());
-                        entry.put("currentStreak", 0);
+                        entry.put("currentStreak", m.getCurrentStreak() != null ? m.getCurrentStreak() : 0);
                         return entry;
                     })
                     .toList();

@@ -39,4 +39,7 @@ public class BoardMember {
     private String notifiedDate;
 
     private List<String> notifiedSlugs;
+
+    /** Current daily solve streak, synced from LeetCode when the streak reminder runs. */
+    private Integer currentStreak;
 }

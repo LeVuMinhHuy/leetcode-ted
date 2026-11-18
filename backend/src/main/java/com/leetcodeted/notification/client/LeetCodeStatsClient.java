@@ -98,9 +98,27 @@ public class LeetCodeStatsClient {
 
     private record ProfileEnvelope(String status, List<RecentSubmission> recentSubmissions) {}
 
+    /** Returns the member's current daily solve streak, or 0 on failure. */
+    public int fetchCurrentStreak(String username) {
+        try {
+            HeatmapEnvelope envelope = restClient.get()
+                    .uri("/{username}/heatmap", username)
+                    .retrieve()
+                    .body(HeatmapEnvelope.class);
+            if (envelope == null || !"success".equals(envelope.status()) || envelope.data() == null) {
+                log.warn("Unexpected heatmap response for user '{}' while fetching streak", username);
+                return 0;
+            }
+            return envelope.data().currentStreak();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch streak for user '{}': {}", username, ex.getMessage());
+            return 0;
+        }
+    }
+
     private record HeatmapEnvelope(String status, HeatmapData data) {}
 
-    private record HeatmapData(List<DailyEntry> dailyContributions) {}
+    private record HeatmapData(List<DailyEntry> dailyContributions, int currentStreak) {}
 
     private record DailyEntry(String date, int count) {}
 }

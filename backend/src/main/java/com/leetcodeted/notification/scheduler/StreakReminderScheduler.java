@@ -29,9 +29,7 @@ public class StreakReminderScheduler {
 
     @Scheduled(cron = "0 0 14 * * *")
     public void sendStreakReminder() {
-        List<BoardMember> members = boardMemberRepository.findAll().stream()
-                .filter(m -> m.getEmail() != null)
-                .toList();
+        List<BoardMember> members = boardMemberRepository.findAllByEmailIsNotNull();
 
         List<BoardMember> laggards = members.stream()
                 .filter(m -> !leetCodeStatsClient.hasSolvedToday(m.getUsername()))

@@ -8,7 +8,7 @@ import clientPromise from '@/lib/mongodb';
 
 export const fetchRatingData = async (): Promise<ColumnSchema[]> => {
 	try {
-		const client = await clientPromise;
+		const client = await clientPromise();
 		const db = client.db();
 		const collection = db.collection<IProblem>(DB_COLLECTION);
 

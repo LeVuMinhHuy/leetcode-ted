@@ -2,8 +2,8 @@ import { listBoardMembers } from '@/lib/board/members';
 import { fetchMemberSnapshot } from '@/lib/leetcode/client';
 import type { MemberSnapshot } from '@/lib/leetcode/types';
 
-const useBackend = process.env.ENABLE_BACKEND_API === 'true';
-const BACKEND_URL = process.env.BACKEND_URL;
+const useBackend = (process.env.ENABLE_BACKEND_API ?? 'true') === 'true';
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://wukode.duckdns.org:8080';
 
 const compareMembers = (a: MemberSnapshot, b: MemberSnapshot): number => {
 	if (b.elo !== a.elo) return b.elo - a.elo;

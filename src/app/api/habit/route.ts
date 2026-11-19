@@ -5,8 +5,8 @@ import {
 } from '@/lib/leetcode/client';
 import { NextResponse } from 'next/server';
 
-const useBackend = process.env.ENABLE_BACKEND_API === 'true';
-const BACKEND_URL = process.env.BACKEND_URL;
+const useBackend = (process.env.ENABLE_BACKEND_API ?? 'true') === 'true';
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://wukode.duckdns.org:8080';
 
 export const GET = async (request: Request) => {
 	try {

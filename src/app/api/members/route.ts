@@ -4,8 +4,8 @@ import { leetCodeUserExists } from '@/lib/leetcode/client';
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 
-const useBackend = process.env.ENABLE_BACKEND_API === 'true';
-const BACKEND_URL = process.env.BACKEND_URL;
+const useBackend = (process.env.ENABLE_BACKEND_API ?? 'true') === 'true';
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://wukode.duckdns.org:8080';
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,30}$/;
 
 export const GET = async () => {

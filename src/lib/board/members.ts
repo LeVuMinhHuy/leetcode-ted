@@ -23,7 +23,7 @@ const mergeMembers = (extra: BoardMemberConfig[]): BoardMemberConfig[] => {
 
 const loadJoinedMembers = async (): Promise<BoardMemberConfig[]> => {
 	try {
-		const client = await clientPromise;
+		const client = await clientPromise();
 		const docs = await client
 			.db()
 			.collection<BoardMemberConfig>(BOARD_MEMBERS_COLLECTION)
@@ -53,7 +53,7 @@ export const addBoardMember = async (
 		displayName: displayName?.trim() || undefined,
 	};
 
-	const client = await clientPromise;
+	const client = await clientPromise();
 	const collection = client.db().collection(BOARD_MEMBERS_COLLECTION);
 
 	await collection.updateOne(

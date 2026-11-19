@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
 	try {
-		const client = await clientPromise;
+		const client = await clientPromise();
 
 		const { id, status, date, favorite, attempts } = await req.json();
 

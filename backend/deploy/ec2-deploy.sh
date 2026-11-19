@@ -18,6 +18,7 @@ start() {
   docker run -d \
     --name "$NAME" \
     --restart unless-stopped \
+    -p 8080:8080 \
     -e AWS_REGION="$REGION" \
     -e MONGODB_URI="$(param /leetcode-ted/mongodb-uri)" \
     -e SQS_QUEUE_URL="$(param /leetcode-ted/sqs-queue-url)" \

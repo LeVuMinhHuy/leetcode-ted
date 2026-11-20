@@ -1,0 +1,18 @@
+# Install: /etc/systemd/system/duckdns.service, then
+#   systemctl daemon-reload && systemctl enable --now duckdns.service
+# Stop order is the reverse of After=, so ExecStop runs while DNS and network are still up.
+[Unit]
+Description=Point wukode.duckdns.org at this instance; clear it on shutdown
+Wants=network-online.target
+After=network-online.target nss-lookup.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/duckdns.sh update
+ExecStop=/usr/local/bin/duckdns.sh clear
+TimeoutStartSec=5min
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target

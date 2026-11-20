@@ -1,9 +1,7 @@
+import { BackendUnavailableError, backendFetch, withBackendFallback } from '@/lib/backend/client';
 import { listBoardMembers } from '@/lib/board/members';
 import { fetchMemberSnapshot } from '@/lib/leetcode/client';
 import type { MemberSnapshot } from '@/lib/leetcode/types';
-
-const useBackend = (process.env.ENABLE_BACKEND_API ?? 'true') === 'true';
-const BACKEND_URL = process.env.BACKEND_URL ?? 'http://wukode.duckdns.org:8080';
 
 const compareMembers = (a: MemberSnapshot, b: MemberSnapshot): number => {
 	if (b.elo !== a.elo) return b.elo - a.elo;
@@ -12,11 +10,9 @@ const compareMembers = (a: MemberSnapshot, b: MemberSnapshot): number => {
 };
 
 const getBoardFromBackend = async (): Promise<MemberSnapshot[]> => {
-	const response = await fetch(`${BACKEND_URL}/api/board`, {
-		headers: { Accept: 'application/json' },
-		cache: 'no-store',
-	});
-	if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+	const response = await backendFetch('/api/board', { headers: { Accept: 'application/json' } });
+	// Read-only path: any non-2xx means this host can't serve the board, so use the direct flow.
+	if (!response.ok) throw new BackendUnavailableError(`/api/board returned ${response.status}`);
 	const { members } = (await response.json()) as { members: MemberSnapshot[] };
 	return members;
 };
@@ -66,7 +62,5 @@ const getBoardDirect = async (): Promise<MemberSnapshot[]> => {
 	return snapshots.sort(compareMembers);
 };
 
-export const getBoard = async (): Promise<MemberSnapshot[]> => {
-	if (useBackend && BACKEND_URL) return getBoardFromBackend();
-	return getBoardDirect();
-};
+export const getBoard = (): Promise<MemberSnapshot[]> =>
+	withBackendFallback('board', getBoardFromBackend, getBoardDirect);

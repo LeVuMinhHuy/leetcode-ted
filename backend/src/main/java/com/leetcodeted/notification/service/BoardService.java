@@ -59,15 +59,6 @@ public class BoardService {
 
     private List<MemberSnapshotDto> buildBoard() {
         List<BoardMember> members = boardMemberRepository.findAll();
-        // Hardcoded seed member (matches frontend BOARD_MEMBERS constant)
-        boolean hasTed = members.stream().anyMatch(m -> "tedvu".equals(m.getUsername()));
-        if (!hasTed) {
-            BoardMember ted = new BoardMember();
-            ted.setUsername("tedvu");
-            ted.setDisplayName("Ted");
-            members = new ArrayList<>(members);
-            members.add(ted);
-        }
 
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         try {

@@ -5,8 +5,6 @@ export type BoardMemberConfig = {
 	excusedDates?: string[];
 };
 
-export const BOARD_MEMBERS: BoardMemberConfig[] = [{ username: 'tedvu', displayName: 'Ted' }];
-
 export const BOARD_MEMBERS_COLLECTION = 'board_members';
 
 // The date we all drunk lol

@@ -1,13 +1,13 @@
-import { BOARD_MEMBERS, BOARD_MEMBERS_COLLECTION } from '@/constants/members';
+import { BOARD_MEMBERS_COLLECTION } from '@/constants/members';
 import type { BoardMemberConfig } from '@/constants/members';
 import clientPromise from '@/lib/mongodb';
 
 const normalizeUsername = (username: string): string => username.trim().toLowerCase();
 
-const mergeMembers = (extra: BoardMemberConfig[]): BoardMemberConfig[] => {
+const dedupeMembers = (members: BoardMemberConfig[]): BoardMemberConfig[] => {
 	const byUsername = new Map<string, BoardMemberConfig>();
 
-	[...BOARD_MEMBERS, ...extra].forEach((member) => {
+	members.forEach((member) => {
 		const username = normalizeUsername(member.username);
 		if (!username) return;
 		if (!byUsername.has(username)) {
@@ -37,7 +37,7 @@ const loadJoinedMembers = async (): Promise<BoardMemberConfig[]> => {
 };
 
 export const listBoardMembers = async (): Promise<BoardMemberConfig[]> =>
-	mergeMembers(await loadJoinedMembers());
+	dedupeMembers(await loadJoinedMembers());
 
 export const addBoardMember = async (
 	username: string,
